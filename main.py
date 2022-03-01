@@ -1,72 +1,95 @@
-import PyPDF2
+from os.path import abspath
+from time import perf_counter
+from colorama import init, Fore, Back, Style
 
-find = [
-  'DO621340',
-  'DO621341',
-  'DO621357',
-  'DO621377',
-  'DO621378',
-  'DO621379',
-  'DO621380',
-  'DO621381',
-  'DO621388',
-  'DO621389',
-  'DO621391',
-  'DO621426',
-  'DO621451',
-  'DO621452',
-  'DO621475',
-  'DO621476',
-  'DO621477',
-  'DO621478',
-  'DO621479',
-  'DO621505',
-  'DO621506',
-  'DO621507',
-  'DO621508',
-  'DO621509',
-  'DO622164',
-  'DO622165',
-  'DO622166',
-  'DO622167',
-  'DO622173',
-  'DO622250',
-  'DO622251',
-  'DO622252',
-  'DO622253',
-  'DO622254',
-  'DO622255',
-  'DO622256',
-  'DO622257',
-  'DO622258',
-]
+from InquirerPy import prompt
+from InquirerPy.validator import PathValidator
 
-result = {}
+from PyPDF2 import PdfFileReader, PdfFileWriter
+from PyPDF2.pdf import PageObject
 
-file = open('./file.pdf', 'rb')
-reader = PyPDF2.PdfFileReader(file)
+answers = None
 
-for ab in find:
-  result[ab] = []
+def setup():
+  init()
+  print(f'{Back.LIGHTBLUE_EX}{Fore.WHITE} INFO {Back.RESET}{Fore.CYAN} Welcome to splitbytext')
+  print(f'{Back.LIGHTBLUE_EX}{Fore.WHITE} INFO {Back.RESET}{Fore.CYAN} Software written by Aaron Teo <aaron.teo@riv-alumni.com>')
+  print(f'{Back.LIGHTBLUE_EX}{Fore.WHITE} INFO {Back.RESET}{Fore.CYAN} Licensed to A-Speed Infotech Pte Ltd')
+  print(f'{Back.LIGHTBLUE_EX}{Fore.WHITE} INFO {Back.RESET}{Fore.GREEN} Initialisation Complete')
+  print(Style.RESET_ALL)
 
-for count in range(0, reader.getNumPages()):
-  page = reader.getPage(count)
-  text = page.extractText()
+def questions():
+  global answers
 
-  for keyword in find:
-    if text.find(keyword) != -1:
-      result[keyword].append(page)
-      print("Hit: " + keyword)
+  questions = [
+      {
+          "type": "filepath",
+          "message": 'File to Process',
+          "long_instruction": "Select the single PDF file containing multiple Delivery Orders.",
+          "name": "file",
+          "only_files": True,
+          "filter": lambda filename: abspath(filename),
+          "validate": PathValidator(is_file=True, message="File not found."),
+      },
+      {
+          "type": "input",
+          "message": "DO Numbers",
+          "long_instruction": "List of Delivery Order numbers seperated by spaces",
+          "name": "do_list",
+          "filter": lambda list: set(list.split()),
+      }
+  ]
 
-for key in result:
-  writer = PyPDF2.PdfFileWriter()
-  data = result[key]
+  answers = prompt(questions)
+  print()
 
-  for page in data:
-    writer.addPage(page)
+
+def main():
+  start = perf_counter()
+  answer_file: str = answers['file']
+  answer_do_list: list[str] = answers['do_list']
+
+  # Iterate through DO numbers and create a dict
+  result = {key: [] for key in answer_do_list}
+
+  # Open file and pass to PdfFileReader
+  file = open(answer_file, 'rb')
+  print(f'{Back.GREEN}{Fore.WHITE} OPEN {Back.RESET}{Fore.CYAN} File {answer_file}')
+
+  # Initialise PDF reader
+  reader = PdfFileReader(file)
+  print(f'{Back.MAGENTA}{Fore.WHITE} INIT {Back.RESET}{Fore.CYAN} PDFFileReader Initialised')
+
+  # Iterate all pages in PDF
+  for count in range(reader.getNumPages()):
+    # Get page as an object
+    page: PageObject = reader.getPage(count)
+    # Extract page text
+    page_text = page.extractText()
+
+    # Iterate Delivery Order numbers
+    for key in answer_do_list:
+      # Check if the Delivery Order is found in the page
+      if page_text.find(key) != -1:
+        result[key].append(page)
+        print(f'{Back.RED}{Fore.WHITE} HIT! {Back.RESET}{Fore.CYAN} {key}')
+
+  for key in result:
+    # Initialise PDF writer
+    writer = PdfFileWriter()
+    pages = result[key]
+
+    # Add pages to PDF writer and write to file
+    for page in pages : writer.addPage(page)
+    with open(f'{key}.pdf', 'wb') as out:
+      writer.write(out)
   
-  with open(key + '.pdf', 'wb') as outfile:
-    writer.write(outfile)
+  end = perf_counter()
+  file.close()
+  print(f'{Back.GREEN}{Fore.WHITE} DONE {Back.RESET}{Fore.GREEN} Processing Complete')
+  print(f'{Back.RED}{Fore.WHITE} TIME {Back.RESET}{Fore.CYAN} Processing Took {int(end - start)}s.')
 
-
-print(reader.numPages)
+if __name__ == '__main__':
+  setup()
+  questions()
+  main()
