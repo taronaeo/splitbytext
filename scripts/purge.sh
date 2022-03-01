@@ -1,4 +1,4 @@
 #! /usr/bin/env bash
 
-rm DO*.pdf
-rm -rf build/
+rm DO*.pdf 2> /dev/null
+rm -rf build/ 2> /dev/null
