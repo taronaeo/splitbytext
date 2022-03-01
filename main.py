@@ -88,8 +88,11 @@ def main():
   file.close()
   print(f'{Back.GREEN}{Fore.WHITE} DONE {Back.RESET}{Fore.GREEN} Processing Complete')
   print(f'{Back.RED}{Fore.WHITE} TIME {Back.RESET}{Fore.CYAN} Processing Took {int(end - start)}s.')
+  print(Style.RESET_ALL)
 
 if __name__ == '__main__':
   setup()
   questions()
   main()
+  print('All output files can be found in the same folder.')
+  input('Application Terminated. Press any key to close...')
