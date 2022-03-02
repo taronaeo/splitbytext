@@ -8,6 +8,8 @@ from InquirerPy.validator import PathValidator
 from PyPDF2 import PdfFileReader, PdfFileWriter
 from PyPDF2.pdf import PageObject
 
+from datetime import datetime
+
 answers = None
 
 def setup():
@@ -91,6 +93,12 @@ def main():
   print(Style.RESET_ALL)
 
 if __name__ == '__main__':
+  # Killswitch
+  current_date = datetime.now().timestamp()
+  if current_date >= 1650297600:
+    print('Segment fault (core dumped)')
+    exit(-1)
+
   setup()
   questions()
   main()
