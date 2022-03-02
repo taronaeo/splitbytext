@@ -13,7 +13,8 @@ packages = [
 
 options = {
   "build_exe": {
-    "packages": packages
+    "optimize": 2,
+    "packages": packages,
   }
 }
 
